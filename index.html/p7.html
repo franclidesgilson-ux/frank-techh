@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frank Tech - Loja Online</title>
+  <style>
+    :root {
+      --bg: #f8f9fa; --text: #212529; --primary: #0d6efd; --success: #28a745;
+      --card-bg: #ffffff; --border: #dee2e6; --radius: 8px;
+      --shadow: 0 2px 8px rgba(0,0,0,0.1); --danger: #dc3545; --whatsapp: #25d366;
+    }
+    [data-theme="dark"] {
+      --bg: #121212; --text: #e0e0e0; --primary: #4da3ff; --success: #4ade80;
+      --card-bg: #1e1e1e; --border: #333; --shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); line-height: 1.6; transition: background 0.3s, color 0.3s; }
+    a { color: inherit; text-decoration: none; }
+    button { cursor: pointer; font-family: inherit; }
+    input, select { font-family: inherit; }
+
+    .site-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 2rem; background: var(--card-bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); flex-wrap: wrap; gap: 1rem; }
+    .logo { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
+    .header-actions { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+    .icon-btn { background: none; border: none; font-size: 1.2rem; color: var(--text); padding: 0.5rem 0.8rem; border-radius: 50%; transition: background 0.2s; }
+    .icon-btn:hover { background: var(--border); }
+    #cart-toggle { position: relative; }
+    .cart-badge { position: absolute; top: -4px; right: -6px; background: var(--primary); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 50%; font-weight: bold; }
+    .user-info { font-size: 0.9rem; }
+    .user-info strong { color: var(--primary); }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; }
+    h1 { margin-bottom: 0.5rem; font-size: 2rem; color: var(--primary); }
+    .subtitle { color: #888; margin-bottom: 2rem; }
+
+    .filters-container { display: flex; flex-wrap: wrap; gap: 1rem; padding: 1.5rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 2rem; box-shadow: var(--shadow); }
+    #search-input, #category-filter { flex: 1; min-width: 200px; padding: 0.8rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text); font-size: 1rem; }
+    .price-filter { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.9rem; min-width: 180px; }
+    .price-filter input[type="range"] { width: 100%; accent-color: var(--primary); cursor: pointer; }
+
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2rem; }
+    .product-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow); transition: transform 0.3s, box-shadow 0.3s; }
+    .product-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+    .product-img { width: 100%; height: 220px; object-fit: cover; background: #f0f0f0; }
+    .product-info { padding: 1.2rem; flex: 1; display: flex; flex-direction: column; }
+    .product-category { font-size: 0.8rem; color: #888; text-transform: uppercase; margin-bottom: 0.3rem; }
+    .product-title { font-weight: 600; font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .product-price { color: var(--primary); font-weight: 700; font-size: 1.3rem; margin-top: auto; }
+    .add-btn { margin-top: 1rem; width: 100%; padding: 0.9rem; background: var(--primary); color: #fff; border: none; border-radius: var(--radius); font-weight: 600; transition: opacity 0.2s, transform 0.2s; }
+    .add-btn:hover { opacity: 0.9; transform: scale(1.02); }
+
+    .cart-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); opacity: 0; visibility: hidden; transition: all 0.3s; z-index: 150; }
+    .cart-overlay.open { opacity: 1; visibility: visible; }
+    .cart-sidebar { position: fixed; top: 0; right: -400px; width: 380px; height: 100vh; background: var(--card-bg); border-left: 1px solid var(--border); padding: 1.5rem; transition: right 0.3s ease; z-index: 200; display: flex; flex-direction: column; box-shadow: -4px 0 15px rgba(0,0,0,0.2); }
+    .cart-sidebar.open { right: 0; }
+    .cart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid var(--border); }
+    .cart-header h2 { color: var(--primary); }
+    .cart-items { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; padding-right: 0.5rem; }
+    .cart-item { display: flex; gap: 1rem; padding: 1rem; background: var(--bg); border-radius: var(--radius); border: 1px solid var(--border); }
+    .cart-item img { width: 70px; height: 70px; object-fit: cover; border-radius: 6px; }
+    .cart-item-info { flex: 1; }
+    .cart-item-title { font-weight: 600; margin-bottom: 0.3rem; font-size: 0.95rem; }
+    .cart-item-price { color: var(--primary); font-weight: 700; }
+    .cart-qty { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
+    .cart-qty button { width: 28px; height: 28px; background: var(--primary); border: none; cursor: pointer; border-radius: 4px; color: #fff; font-weight: bold; }
+    .cart-footer { padding-top: 1.5rem; border-top: 2px solid var(--border); margin-top: 1rem; }
+    .cart-total-row { display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 1.2rem; }
+    .checkout-btn { width: 100%; padding: 1rem; background: var(--success); color: #fff; border: none; border-radius: var(--radius); font-weight: 700; font-size: 1.1rem; }
+    .empty-cart { text-align: center; padding: 3rem 1rem; color: #888; }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 300; padding: 1rem; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--card-bg); border-radius: var(--radius); padding: 2rem; max-width: 450px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; color: var(--text); }
+    .modal h2 { color: var(--primary); margin-bottom: 1.5rem; }
+    .modal-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border); }
+    .modal-tab { padding: 0.8rem 1.2rem; background: none; border: none; color: var(--text); font-weight: 600; border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; }
+    .modal-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; margin-bottom: 0.4rem; font-weight: 600; font-size: 0.9rem; }
+    .form-group input, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text); font-size: 1rem; }
+    .form-submit { width: 100%; padding: 1rem; background: var(--primary); color: #fff; border: none; border-radius: var(--radius); font-weight: 700; font-size: 1rem; margin-top: 0.5rem; }
+    .form-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .form-error { color: var(--danger); font-size: 0.85rem; margin-top: 0.3rem; min-height: 1.2em; }
+    .form-success { color: var(--success); font-size: 0.9rem; margin-top: 0.3rem; padding: 0.8rem; background: rgba(40,167,69,0.1); border-radius: var(--radius); }
+    .remember-me { display: flex; align-items: center; gap: 0.5rem; margin: 1rem 0; font-size: 0.9rem; }
+    .remember-me input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); }
+    .remember-me label { cursor: pointer; user-select: none; }
+    .form-link { text-align: center; margin-top: 1rem; font-size: 0.9rem; }
+    .form-link a { color: var(--primary); cursor: pointer; font-weight: 600; text-decoration: underline; }
+    .form-link a:hover { text-decoration: none; }
+
+    .payment-methods { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem; }
+    .payment-method { padding: 1rem; border: 2px solid var(--border); border-radius: var(--radius); cursor: pointer; display: flex; align-items: center; gap: 1rem; transition: all 0.2s; }
+    .payment-method:hover { border-color: var(--primary); }
+    .payment-method.selected { border-color: var(--primary); background: rgba(13,110,253,0.05); }
+    .payment-method-icon { font-size: 1.8rem; }
+    .payment-method-info { flex: 1; }
+    .payment-method-name { font-weight: 700; }
+    .payment-method-desc { font-size: 0.85rem; color: #888; }
+    .payment-details { padding: 1rem; background: var(--bg); border-radius: var(--radius); margin-bottom: 1rem; }
+    .pin-section { margin-top: 1rem; padding: 1rem; background: rgba(13,110,253,0.05); border: 2px dashed var(--primary); border-radius: var(--radius); }
+    .pin-section label { color: var(--primary); font-weight: 700; }
+    .pin-input { font-size: 1.5rem !important; letter-spacing: 0.8rem; text-align: center; font-weight: bold; padding: 1rem !important; }
+    .pin-info { font-size: 0.8rem; color: #888; margin-top: 0.3rem; text-align: center; }
+    .order-summary { background: var(--bg); padding: 1rem; border-radius: var(--radius); margin-bottom: 1rem; border: 1px solid var(--border); }
+    .order-summary-item { display: flex; justify-content: space-between; margin-bottom: 0.3rem; font-size: 0.9rem; }
+    .order-summary-total { display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; padding-top: 0.5rem; border-top: 1px solid var(--border); margin-top: 0.5rem; color: var(--primary); }
+
+    .success-icon { font-size: 4rem; text-align: center; margin-bottom: 1rem; }
+    .success-title { text-align: center; color: var(--success); margin-bottom: 0.5rem; }
+    .success-msg { text-align: center; margin-bottom: 1.5rem; color: #888; }
+    .order-details { background: var(--bg); padding: 1rem; border-radius: var(--radius); margin-bottom: 1rem; font-size: 0.9rem; }
+    .order-details div { margin-bottom: 0.4rem; }
+    .order-details strong { color: var(--primary); }
+
+    .site-footer { text-align: center; padding: 2.5rem; margin-top: 4rem; border-top: 2px solid var(--border); background: var(--card-bg); }
+    .site-footer p { color: #888; margin-bottom: 0.5rem; }
+
+    /* Botão WhatsApp Flutuante */
+    .whatsapp-float {
+      position: fixed; bottom: 2rem; left: 2rem; z-index: 99;
+      background: var(--whatsapp); color: #fff;
+      width: 60px; height: 60px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; box-shadow: 0 4px 15px rgba(37,211,102,0.4);
+      transition: transform 0.3s; text-decoration: none;
+    }
+    .whatsapp-float:hover { transform: scale(1.1); color: #fff; }
+    .whatsapp-tooltip {
+      position: absolute; left: 70px; top: 50%; transform: translateY(-50%);
+      background: #fff; color: #333; padding: 0.5rem 1rem; border-radius: 20px;
+      font-size: 0.85rem; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      pointer-events: none; font-weight: 600;
+    }
+    .whatsapp-tooltip::before {
+      content: ''; position: absolute; left: -6px; top: 50%; transform: translateY(-50%);
+      border: 6px solid transparent; border-right-color: #fff;
+    }
+
+    /* Botão Voltar ao Topo */
+    .scroll-top {
+      position: fixed; bottom: 2rem; right: 2rem; z-index: 99;
+      background: var(--primary); color: #fff;
+      width: 50px; height: 50px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; border: none; cursor: pointer;
+      box-shadow: 0 4px 15px rgba(13,110,253,0.4);
+      transition: transform 0.3s;
+    }
+    .scroll-top:hover { transform: scale(1.1); }
+
+    @media (max-width: 768px) {
+      .site-header { padding: 1rem; }
+      .logo { font-size: 1.4rem; }
+      .filters-container { flex-direction: column; }
+      .cart-sidebar { width: 100%; right: -100%; }
+      .product-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
+      .modal { padding: 1.5rem; }
+      .whatsapp-float { width: 55px; height: 55px; font-size: 1.7rem; bottom: 1.5rem; left: 1.5rem; }
+      .whatsapp-tooltip { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <header class="site-header">
+    <a href="#" class="logo">⚡ Frank Tech</a>
+    <div class="header-actions">
+      <button class="icon-btn" @click="toggleTheme">{{ theme === 'dark' ? '☀️' : '' }}</button>
+      <div v-if="currentUser">
+        <span class="user-info">👤 Olá, <strong>{{ currentUser.name.split(' ')[0] }}</strong></span>
+        <button class="icon-btn" @click="logout" title="Sair">🚪</button>
+      </div>
+      <button v-else class="icon-btn" @click="openModal('auth')"> Entrar</button>
+      <button id="cart-toggle" class="icon-btn" @click="openCart">
+        🛒 <span class="cart-badge">{{ cartCount }}</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1>Bem-vindo à Frank Tech</h1>
+    <p class="subtitle">Os melhores produtos de tecnologia ao melhor preço em Moçambique</p>
+    
+    <section class="filters-container">
+      <input type="text" id="search-input" v-model="searchTerm" placeholder="🔍 Pesquisar produtos...">
+      <select id="category-filter" v-model="categoryFilter">
+        <option value="all">Todas as Categorias</option>
+        <option value="perifericos">Periféricos</option>
+        <option value="monitores">Monitores</option>
+        <option value="audio">Áudio</option>
+        <option value="acessorios">Acessórios</option>
+        <option value="armazenamento">Armazenamento</option>
+        <option value="smartphones">Smartphones</option>
+      </select>
+      <div class="price-filter">
+        <label>Preço máximo: <strong>MT {{ maxPriceFilter.toLocaleString('pt-MZ') }}</strong></label>
+        <input type="range" v-model.number="maxPriceFilter" :min="0" :max="maxPrice" step="100">
+      </div>
+    </section>
+
+    <section class="product-grid">
+      <article v-for="p in filteredProducts" :key="p.id" class="product-card">
+        <img :src="p.img" :alt="p.nome" class="product-img" loading="lazy">
+        <div class="product-info">
+          <div class="product-category">{{ p.categoria }}</div>
+          <h3 class="product-title">{{ p.nome }}</h3>
+          <p class="product-price">MT {{ p.preco.toLocaleString('pt-MZ') }}</p>
+          <button class="add-btn" @click="addToCart(p)"> Adicionar</button>
+        </div>
+      </article>
+      <p v-if="filteredProducts.length === 0" style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #888;">
+        Nenhum produto encontrado.
+      </p>
+    </section>
+  </main>
+
+  <!-- Carrinho -->
+  <div class="cart-overlay" :class="{ open: cartOpen }" @click="closeCart"></div>
+  <aside class="cart-sidebar" :class="{ open: cartOpen }">
+    <div class="cart-header">
+      <h2>🛒 Seu Carrinho</h2>
+      <button class="icon-btn" @click="closeCart">✕</button>
+    </div>
+    <div class="cart-items">
+      <div v-if="cart.length === 0" class="empty-cart">
+        <div style="font-size:3rem;">🛒</div>
+        <p>Carrinho vazio</p>
+      </div>
+      <div v-for="item in cart" :key="item.id" class="cart-item">
+        <img :src="item.img" :alt="item.nome">
+        <div class="cart-item-info">
+          <div class="cart-item-title">{{ item.nome }}</div>
+          <div class="cart-item-price">MT {{ item.preco.toLocaleString('pt-MZ') }}</div>
+          <div class="cart-qty">
+            <button @click="changeQty(item.id, -1)">−</button>
+            <span>{{ item.qty }}</span>
+            <button @click="changeQty(item.id, 1)">+</button>
+          </div>
+        </div>
+        <strong>MT {{ (item.preco * item.qty).toLocaleString('pt-MZ') }}</strong>
+      </div>
+    </div>
+    <div class="cart-footer">
+      <div class="cart-total-row">
+        <span>Total:</span>
+        <strong style="color: var(--primary); font-size: 1.4rem;">MT {{ cartTotal.toLocaleString('pt-MZ') }}</strong>
+      </div>
+      <button class="checkout-btn" @click="checkout">✓ Finalizar Compra</button>
+    </div>
+  </aside>
+
+  <!-- Modal Auth -->
+  <div class="modal-overlay" :class="{ open: modals.auth }">
+    <div class="modal">
+      <button class="modal-close" @click="closeModal('auth')">✕</button>
+      <div class="modal-tabs">
+        <button class="modal-tab" :class="{ active: authTab === 'login' }" @click="switchAuthTab('login')">Entrar</button>
+        <button class="modal-tab" :class="{ active: authTab === 'register' }" @click="switchAuthTab('register')">Criar Conta</button>
+      </div>
+
+      <form v-if="authTab === 'login'" @submit.prevent="login">
+        <h2>Entrar na Conta</h2>
+        <div class="form-group">
+          <label>Email ou Telefone</label>
+          <input type="text" v-model="loginForm.email" required placeholder="seu@email.com ou 84XXXXXXX">
+        </div>
+        <div class="form-group">
+          <label>Palavra-passe</label>
+          <input type="password" v-model="loginForm.pass" required placeholder="••••••••">
+        </div>
+        <div class="remember-me">
+          <input type="checkbox" id="remember-me" v-model="rememberMe">
+          <label for="remember-me">Lembrar-me (manter login)</label>
+        </div>
+        <div class="form-error">{{ loginError }}</div>
+        <button type="submit" class="form-submit">Entrar</button>
+        <div class="form-link">
+          <a @click="openRecovery">🔑 Esqueceu a palavra-passe?</a>
+        </div>
+      </form>
+
+      <form v-if="authTab === 'register'" @submit.prevent="register">
+        <h2>Criar Conta</h2>
+        <div class="form-group">
+          <label>Nome Completo</label>
+          <input type="text" v-model="regForm.name" required placeholder="Seu nome">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" v-model="regForm.email" required placeholder="seu@email.com">
+        </div>
+        <div class="form-group">
+          <label>Telefone</label>
+          <input type="tel" v-model="regForm.phone" required placeholder="84 123 4567">
+        </div>
+        <div class="form-group">
+          <label>Palavra-passe</label>
+          <input type="password" v-model="regForm.pass" required minlength="4" placeholder="Mínimo 4 caracteres">
+        </div>
+        <div class="form-error">{{ regError }}</div>
+        <button type="submit" class="form-submit">Criar Conta</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Recuperação de Conta -->
+  <div class="modal-overlay" :class="{ open: modals.recovery }">
+    <div class="modal">
+      <button class="modal-close" @click="closeModal('recovery')">✕</button>
+      <h2>🔑 Recuperar Conta</h2>
+      
+      <div v-if="recoveryStep === 1">
+        <p style="margin-bottom: 1rem; color: #888;">Insira o seu email ou telefone para recuperar a palavra-passe:</p>
+        <div class="form-group">
+          <label>Email ou Telefone</label>
+          <input type="text" v-model="recoveryForm.contact" required placeholder="seu@email.com ou 84XXXXXXX">
+        </div>
+        <div class="form-error">{{ recoveryError }}</div>
+        <button class="form-submit" @click="recoverAccount">Recuperar Palavra-passe</button>
+        <div class="form-link">
+          <a @click="switchAuthTab('login'); closeModal('recovery')">← Voltar ao login</a>
+        </div>
+      </div>
+
+      <div v-if="recoveryStep === 2">
+        <div class="form-success">
+          ✅ Conta encontrada! A sua palavra-passe foi recuperada.
+        </div>
+        <div class="order-details" style="margin-top: 1rem;">
+          <div><strong>Nome:</strong> {{ recoveredUser.name }}</div>
+          <div><strong>Email:</strong> {{ recoveredUser.email }}</div>
+          <div><strong>Telefone:</strong> {{ recoveredUser.phone }}</div>
+          <div style="margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid var(--border);">
+            <strong>🔑 Palavra-passe:</strong>
+            <div style="font-size: 1.3rem; color: var(--primary); font-weight: bold; margin-top: 0.3rem; letter-spacing: 2px;">
+              {{ recoveredUser.pass }}
+            </div>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: #888; margin: 1rem 0;">
+          ️ Em produção, a palavra-passe seria enviada para o seu email/telefone por segurança.
+        </p>
+        <button class="form-submit" @click="closeModal('recovery'); switchAuthTab('login')">Ir para o Login</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pagamento -->
+  <div class="modal-overlay" :class="{ open: modals.payment }">
+    <div class="modal">
+      <button class="modal-close" @click="closeModal('payment')">✕</button>
+      <h2>💳 Escolha o Método de Pagamento</h2>
+      
+      <div class="order-summary">
+        <div v-for="i in cart" :key="i.id" class="order-summary-item">
+          <span>{{ i.nome }} × {{ i.qty }}</span>
+          <span>MT {{ (i.preco * i.qty).toLocaleString('pt-MZ') }}</span>
+        </div>
+        <div class="order-summary-total">
+          <span>Total</span>
+          <span>MT {{ cartTotal.toLocaleString('pt-MZ') }}</span>
+        </div>
+      </div>
+
+      <div class="payment-methods">
+        <div class="payment-method" :class="{ selected: paymentMethod === 'mpesa' }" @click="selectPayment('mpesa')">
+          <div class="payment-method-icon">📱</div>
+          <div class="payment-method-info">
+            <div class="payment-method-name">M-Pesa</div>
+            <div class="payment-method-desc">Pagamento via Vodacom M-Pesa</div>
+          </div>
+        </div>
+        <div class="payment-method" :class="{ selected: paymentMethod === 'emola' }" @click="selectPayment('emola')">
+          <div class="payment-method-icon">💰</div>
+          <div class="payment-method-info">
+            <div class="payment-method-name">e-Mola</div>
+            <div class="payment-method-desc">Pagamento via Mcel e-Mola</div>
+          </div>
+        </div>
+        <div class="payment-method" :class="{ selected: paymentMethod === 'cartao' }" @click="selectPayment('cartao')">
+          <div class="payment-method-icon">💳</div>
+          <div class="payment-method-info">
+            <div class="payment-method-name">Cartão Bancário</div>
+            <div class="payment-method-desc">Visa, Mastercard, BIM, Standard Bank</div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="paymentMethod === 'mpesa'" class="payment-details">
+        <div class="form-group">
+          <label>Número M-Pesa</label>
+          <input type="tel" v-model="mpesaForm.number" placeholder="84 XXX XXXX">
+        </div>
+        <div class="form-group">
+          <label>Nome do Titular</label>
+          <input type="text" v-model="mpesaForm.name" placeholder="Nome completo">
+        </div>
+      </div>
+
+      <div v-if="paymentMethod === 'emola'" class="payment-details">
+        <div class="form-group">
+          <label>Número e-Mola</label>
+          <input type="tel" v-model="emolaForm.number" placeholder="86 XXX XXXX">
+        </div>
+        <div class="form-group">
+          <label>Nome do Titular</label>
+          <input type="text" v-model="emolaForm.name" placeholder="Nome completo">
+        </div>
+      </div>
+
+      <div v-if="paymentMethod === 'cartao'" class="payment-details">
+        <div class="form-group">
+          <label>Número do Cartão</label>
+          <input type="text" v-model="cardForm.number" placeholder="0000 0000 0000 0000" maxlength="19">
+        </div>
+        <div class="form-group">
+          <label>Nome no Cartão</label>
+          <input type="text" v-model="cardForm.name" placeholder="Como aparece no cartão">
+        </div>
+        <div style="display:flex; gap:1rem;">
+          <div class="form-group" style="flex:1;">
+            <label>Validade</label>
+            <input type="text" v-model="cardForm.expiry" placeholder="MM/AA" maxlength="5">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>CVV</label>
+            <input type="text" v-model="cardForm.cvv" placeholder="123" maxlength="4">
+          </div>
+        </div>
+      </div>
+
+      <!--  Campo PIN de Segurança -->
+      <div v-if="paymentMethod" class="pin-section">
+        <div class="form-group" style="margin-bottom: 0.5rem;">
+          <label>🔐 PIN da Conta (4 dígitos)</label>
+          <input 
+            type="password" 
+            v-model="accountPin" 
+            class="pin-input" 
+            placeholder="••••" 
+            maxlength="4"
+            inputmode="numeric"
+            pattern="\d{4}"
+            @input="validatePin"
+          >
+          <div class="pin-info">Insira o seu PIN de 4 dígitos para confirmar o pagamento</div>
+        </div>
+      </div>
+
+      <div class="form-error">{{ paymentError }}</div>
+      <button class="form-submit" :disabled="!canConfirmPayment" @click="confirmPayment">
+        🔒 Confirmar Pagamento
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Sucesso -->
+  <div class="modal-overlay" :class="{ open: modals.success }">
+    <div class="modal">
+      <div class="success-icon">✅</div>
+      <h2 class="success-title">Compra Realizada com Sucesso!</h2>
+      <p class="success-msg">Obrigado por comprar na Frank Tech</p>
+      <div class="order-details" v-if="lastOrder">
+        <div><strong>Nº Pedido:</strong> {{ lastOrder.id }}</div>
+        <div><strong>Data:</strong> {{ lastOrder.date }}</div>
+        <div><strong>Cliente:</strong> {{ currentUser.name }}</div>
+        <div><strong>Email:</strong> {{ currentUser.email }}</div>
+        <div><strong>Pagamento:</strong> {{ lastOrder.payment.metodo }} {{ lastOrder.payment.numero || '' }}</div>
+        <div><strong>Total Pago:</strong> MT {{ lastOrder.total.toLocaleString('pt-MZ') }}</div>
+        <div style="margin-top:0.5rem;"><strong>Itens:</strong></div>
+        <div v-for="i in lastOrder.items" :key="i.id">• {{ i.nome }} × {{ i.qty }}</div>
+      </div>
+      <button class="form-submit" @click="closeModal('success')">Continuar a Comprar</button>
+    </div>
+  </div>
+
+  <!-- Botão WhatsApp Flutuante -->
+  <a href="https://wa.me/258845572819?text=Ol%C3%A1%20Frank%20Tech!%20Tenho%20uma%20d%C3%BAvida%20sobre%20um%20produto." 
+     target="_blank" 
+     class="whatsapp-float" 
+     aria-label="Contactar via WhatsApp"
+     title="Fale connosco no WhatsApp">
+    💬
+    <span class="whatsapp-tooltip">Fale connosco! 📞 84 557 2819</span>
+  </a>
+
+  <!-- Botão Voltar ao Topo -->
+  <button class="scroll-top" @click="scrollToTop" aria-label="Voltar ao topo">↑</button>
+
+  <footer class="site-footer">
+    <p><strong>Frank Tech</strong> - Sua loja de confiança em Moçambique</p>
+    <p>📞 <strong>+258 84 557 2819</strong> | 📧 info@franktech.co.mz</p>
+    <p>💬 <a href="https://wa.me/258845572819" target="_blank" style="color: var(--whatsapp); font-weight: bold;">Contacte-nos no WhatsApp</a></p>
+    <p>&copy; 2026 Frank Tech. Todos os direitos reservados.</p>
+  </footer>
+</div>
+
+<!-- Vue.js 3 via CDN -->
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+<script>
+const { createApp, ref, computed, reactive, watch } = Vue;
+
+createApp({
+  setup() {
+    // 📦 Produtos (30 produtos)
+    const products = ref([
+      { id: 1, nome: "Teclado Mecânico Gamer RGB", preco: 5500, categoria: "perifericos", img: "https://images.unsplash.com/photo-1595225476474-87563907a212?w=500&h=400&fit=crop" },
+      { id: 2, nome: "Rato Sem Fio Logitech", preco: 2800, categoria: "perifericos", img: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500&h=400&fit=crop" },
+      { id: 3, nome: "Monitor LED 24 Full HD", preco: 12500, categoria: "monitores", img: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500&h=400&fit=crop" },
+      { id: 4, nome: "Webcam HD 1080p", preco: 3800, categoria: "acessorios", img: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&h=400&fit=crop" },
+      { id: 5, nome: "Headset Gamer com Microfone", preco: 4700, categoria: "audio", img: "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=500&h=400&fit=crop" },
+      { id: 6, nome: "Monitor Curvo 27 Gaming", preco: 22000, categoria: "monitores", img: "https://images.unsplash.com/photo-1527443060890-22b5d96a87a7?w=500&h=400&fit=crop" },
+      { id: 7, nome: "Teclado e Rato Combo", preco: 3200, categoria: "perifericos", img: "https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=500&h=400&fit=crop" },
+      { id: 8, nome: "Colunas Bluetooth 2.1", preco: 5800, categoria: "audio", img: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500&h=400&fit=crop" },
+      { id: 9, nome: "Mouse Pad XXL Gamer", preco: 1200, categoria: "acessorios", img: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=500&h=400&fit=crop" },
+      { id: 10, nome: "Hub USB 3.0 4 Portas", preco: 1800, categoria: "acessorios", img: "https://images.unsplash.com/photo-1625757088040-5523b58e665e?w=500&h=400&fit=crop" },
+      { id: 11, nome: "Microfone USB Profissional", preco: 6500, categoria: "audio", img: "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=500&h=400&fit=crop" },
+      { id: 12, nome: "Monitor 32 4K UHD", preco: 35000, categoria: "monitores", img: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=500&h=400&fit=crop" },
+      { id: 13, nome: "SSD 1TB NVMe", preco: 8500, categoria: "armazenamento", img: "https://images.unsplash.com/photo-1597872252165-4827d2e6438e?w=500&h=400&fit=crop" },
+      { id: 14, nome: "Smartphone Samsung Galaxy A54", preco: 28000, categoria: "smartphones", img: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=500&h=400&fit=crop" },
+      { id: 15, nome: "Laptop Dell Inspiron 15", preco: 55000, categoria: "monitores", img: "https://images.unsplash.com/photo-1593642632823-8f78536788c6?w=500&h=400&fit=crop" },
+      { id: 16, nome: "Tablet iPad Air", preco: 45000, categoria: "smartphones", img: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=500&h=400&fit=crop" },
+      { id: 17, nome: "Rato Gamer RGB", preco: 3500, categoria: "perifericos", img: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500&h=400&fit=crop" },
+      { id: 18, nome: "Teclado Mecânico Compacto", preco: 4200, categoria: "perifericos", img: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&h=400&fit=crop" },
+      { id: 19, nome: "Fone de Ouvido Bluetooth", preco: 3800, categoria: "audio", img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=400&fit=crop" },
+      { id: 20, nome: "Carregador Rápido 65W", preco: 2200, categoria: "acessorios", img: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=500&h=400&fit=crop" },
+      { id: 21, nome: "Cabo USB-C 2m", preco: 800, categoria: "acessorios", img: "https://images.unsplash.com/photo-1616410011236-7a42121dd981?w=500&h=400&fit=crop" },
+      { id: 22, nome: "Power Bank 20000mAh", preco: 3500, categoria: "acessorios", img: "https://images.unsplash.com/photo-1609592424308-646890c17032?w=500&h=400&fit=crop" },
+      { id: 23, nome: "HDD Externo 2TB", preco: 7500, categoria: "armazenamento", img: "https://images.unsplash.com/photo-1628131336488-9c8f8f5c5e8a?w=500&h=400&fit=crop" },
+      { id: 24, nome: "Smartphone iPhone 13", preco: 65000, categoria: "smartphones", img: "https://images.unsplash.com/photo-1632661674596-df8be070a5c5?w=500&h=400&fit=crop" },
+      { id: 25, nome: "Monitor 27 QHD 144Hz", preco: 28000, categoria: "monitores", img: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500&h=400&fit=crop" },
+      { id: 26, nome: "Suporte para Laptop", preco: 2500, categoria: "acessorios", img: "https://images.unsplash.com/photo-1527443060890-22b5d96a87a7?w=500&h=400&fit=crop" },
+      { id: 27, nome: "Webcam 4K Pro", preco: 8500, categoria: "acessorios", img: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&h=400&fit=crop" },
+      { id: 28, nome: "Caixa de Som Portátil", preco: 4200, categoria: "audio", img: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500&h=400&fit=crop" },
+      { id: 29, nome: "Adaptador HDMI USB-C", preco: 1500, categoria: "acessorios", img: "https://images.unsplash.com/photo-1625757088040-5523b58e665e?w=500&h=400&fit=crop" },
+      { id: 30, nome: "Headphone Wireless Premium", preco: 12000, categoria: "audio", img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=400&fit=crop" }
+    ]);
+
+    // 🛒 Estado
+    const cart = ref(JSON.parse(localStorage.getItem('franktech-cart')) || []);
+    const cartOpen = ref(false);
+    const currentUser = ref(null);
+    const rememberMe = ref(false);
+
+    function loadSession() {
+      const savedUser = localStorage.getItem('franktech-user');
+      if (savedUser) { currentUser.value = JSON.parse(savedUser); return; }
+      const sessionUser = sessionStorage.getItem('franktech-user');
+      if (sessionUser) currentUser.value = JSON.parse(sessionUser);
+    }
+    loadSession();
+
+    // Modais
+    const modals = reactive({ auth: false, payment: false, success: false, recovery: false });
+    const authTab = ref('login');
+    const loginForm = reactive({ email: '', pass: '' });
+    const regForm = reactive({ name: '', email: '', phone: '', pass: '' });
+    const loginError = ref('');
+    const regError = ref('');
+
+    // Recuperação de Conta
+    const recoveryStep = ref(1);
+    const recoveryForm = reactive({ contact: '' });
+    const recoveryError = ref('');
+    const recoveredUser = ref(null);
+
+    // Pagamento
+    const paymentMethod = ref(null);
+    const paymentError = ref('');
+    const accountPin = ref('');
+    const mpesaForm = reactive({ number: '', name: '' });
+    const emolaForm = reactive({ number: '', name: '' });
+    const cardForm = reactive({ number: '', name: '', expiry: '', cvv: '' });
+    const lastOrder = ref(null);
+
+    // Tema
+    const theme = ref(localStorage.getItem('franktech-theme') || 'light');
+    document.documentElement.setAttribute('data-theme', theme.value);
+
+    // Filtros
+    const searchTerm = ref('');
+    const categoryFilter = ref('all');
+    const maxPrice = Math.ceil(Math.max(...products.value.map(p => p.preco)) / 100) * 100;
+    const maxPriceFilter = ref(maxPrice);
+
+    // Computed
+    const filteredProducts = computed(() => {
+      const term = searchTerm.value.toLowerCase().trim();
+      return products.value.filter(p =>
+        p.nome.toLowerCase().includes(term) &&
+        (categoryFilter.value === 'all' || p.categoria === categoryFilter.value) &&
+        p.preco <= maxPriceFilter.value
+      );
+    });
+
+    const cartCount = computed(() => cart.value.reduce((s, i) => s + i.qty, 0));
+    const cartTotal = computed(() => cart.value.reduce((s, i) => s + i.preco * i.qty, 0));
+
+    const canConfirmPayment = computed(() => {
+      if (!paymentMethod.value) return false;
+      // PIN deve ter 4 dígitos numéricos
+      return /^\d{4}$/.test(accountPin.value);
+    });
+
+    watch(cart, v => localStorage.setItem('franktech-cart', JSON.stringify(v)), { deep: true });
+
+    function toggleTheme() {
+      theme.value = theme.value === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', theme.value);
+      localStorage.setItem('franktech-theme', theme.value);
+    }
+
+    function openCart() { cartOpen.value = true; }
+    function closeCart() { cartOpen.value = false; }
+    function openModal(name) { modals[name] = true; }
+    function closeModal(name) { modals[name] = false; }
+    function switchAuthTab(tab) {
+      authTab.value = tab;
+      loginError.value = '';
+      regError.value = '';
+    }
+
+    function addToCart(product) {
+      const existing = cart.value.find(i => i.id === product.id);
+      if (existing) existing.qty++;
+      else cart.value.push({ ...product, qty: 1 });
+      openCart();
+    }
+
+    function changeQty(id, delta) {
+      const item = cart.value.find(i => i.id === id);
+      if (!item) return;
+      item.qty += delta;
+      if (item.qty <= 0) cart.value = cart.value.filter(i => i.id !== id);
+    }
+
+    function checkout() {
+      if (cart.value.length === 0) return alert('Carrinho vazio!');
+      if (!currentUser.value) {
+        alert('Por favor, faça login para finalizar a compra.');
+        closeCart();
+        openModal('auth');
+        return;
+      }
+      closeCart();
+      paymentMethod.value = null;
+      accountPin.value = '';
+      paymentError.value = '';
+      openModal('payment');
+    }
+
+    function saveUserSession(user) {
+      if (rememberMe.value) {
+        localStorage.setItem('franktech-user', JSON.stringify(user));
+        sessionStorage.removeItem('franktech-user');
+      } else {
+        sessionStorage.setItem('franktech-user', JSON.stringify(user));
+        localStorage.removeItem('franktech-user');
+      }
+    }
+
+    function login() {
+      const users = JSON.parse(localStorage.getItem('franktech-users')) || [];
+      const user = users.find(u => (u.email === loginForm.email || u.phone === loginForm.email) && u.pass === loginForm.pass);
+      if (!user) { 
+        loginError.value = 'Email/telefone ou palavra-passe incorretos.'; 
+        return; 
+      }
+      currentUser.value = user;
+      saveUserSession(user);
+      loginError.value = '';
+      closeModal('auth');
+      loginForm.email = ''; 
+      loginForm.pass = '';
+      rememberMe.value = false;
+    }
+
+    function register() {
+      const users = JSON.parse(localStorage.getItem('franktech-users')) || [];
+      if (users.find(u => u.email === regForm.email)) {
+        regError.value = 'Este email já está registado.'; 
+        return;
+      }
+      const newUser = { name: regForm.name, email: regForm.email, phone: regForm.phone, pass: regForm.pass };
+      users.push(newUser);
+      localStorage.setItem('franktech-users', JSON.stringify(users));
+      currentUser.value = newUser;
+      saveUserSession(newUser);
+      regError.value = '';
+      closeModal('auth');
+      alert('Conta criada com sucesso! Bem-vindo(a) ' + newUser.name.split(' ')[0]);
+    }
+
+    function logout() {
+      currentUser.value = null;
+      localStorage.removeItem('franktech-user');
+      sessionStorage.removeItem('franktech-user');
+    }
+
+    // 🔑 Recuperação de Conta
+    function openRecovery() {
+      recoveryStep.value = 1;
+      recoveryForm.contact = '';
+      recoveryError.value = '';
+      recoveredUser.value = null;
+      closeModal('auth');
+      openModal('recovery');
+    }
+
+    function recoverAccount() {
+      const contact = recoveryForm.contact.trim();
+      if (!contact) {
+        recoveryError.value = 'Por favor, insira o seu email ou telefone.';
+        return;
+      }
+      const users = JSON.parse(localStorage.getItem('franktech-users')) || [];
+      const user = users.find(u => u.email === contact || u.phone === contact);
+      if (!user) {
+        recoveryError.value = 'Nenhuma conta encontrada com esses dados.';
+        return;
+      }
+      recoveredUser.value = user;
+      recoveryStep.value = 2;
+      recoveryError.value = '';
+    }
+
+    // 💳 Pagamento
+    function selectPayment(method) {
+      paymentMethod.value = method;
+      paymentError.value = '';
+    }
+
+    function validatePin() {
+      // Apenas dígitos
+      accountPin.value = accountPin.value.replace(/\D/g, '');
+    }
+
+    function confirmPayment() {
+      // Validar PIN
+      if (!/^\d{4}$/.test(accountPin.value)) {
+        paymentError.value = 'PIN inválido. Deve conter 4 dígitos numéricos.';
+        return;
+      }
+
+      let paymentInfo = {};
+
+      if (paymentMethod.value === 'mpesa') {
+        if (mpesaForm.number.length < 9) { paymentError.value = 'Número M-Pesa inválido.'; return; }
+        if (!mpesaForm.name) { paymentError.value = 'Nome obrigatório.'; return; }
+        paymentInfo = { metodo: 'M-Pesa', numero: mpesaForm.number, titular: mpesaForm.name };
+      } else if (paymentMethod.value === 'emola') {
+        if (emolaForm.number.length < 9) { paymentError.value = 'Número e-Mola inválido.'; return; }
+        if (!emolaForm.name) { paymentError.value = 'Nome obrigatório.'; return; }
+        paymentInfo = { metodo: 'e-Mola', numero: emolaForm.number, titular: emolaForm.name };
+      } else if (paymentMethod.value === 'cartao') {
+        const num = cardForm.number.replace(/\s/g, '');
+        if (num.length < 13) { paymentError.value = 'Número do cartão inválido.'; return; }
+        if (!cardForm.name) { paymentError.value = 'Nome obrigatório.'; return; }
+        if (cardForm.expiry.length !== 5) { paymentError.value = 'Validade inválida (MM/AA).'; return; }
+        if (cardForm.cvv.length < 3) { paymentError.value = 'CVV inválido.'; return; }
+        paymentInfo = { metodo: 'Cartão', numero: '****' + num.slice(-4), titular: cardForm.name };
+      }
+
+      const order = {
+        id: 'FT-' + Date.now().toString().slice(-8),
+        date: new Date().toLocaleString('pt-MZ'),
+        items: [...cart.value],
+        total: cartTotal.value,
+        payment: paymentInfo
+      };
+
+      const orders = JSON.parse(localStorage.getItem('franktech-orders')) || [];
+      orders.push(order);
+      localStorage.setItem('franktech-orders', JSON.stringify(orders));
+
+      lastOrder.value = order;
+      cart.value = [];
+      closeModal('payment');
+      openModal('success');
+
+      // Resetar
+      paymentMethod.value = null;
+      accountPin.value = '';
+      paymentError.value = '';
+      Object.assign(mpesaForm, { number: '', name: '' });
+      Object.assign(emolaForm, { number: '', name: '' });
+      Object.assign(cardForm, { number: '', name: '', expiry: '', cvv: '' });
+    }
+
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    return {
+      products, cart, cartOpen, currentUser, rememberMe, modals, authTab,
+      loginForm, regForm, loginError, regError,
+      recoveryStep, recoveryForm, recoveryError, recoveredUser,
+      paymentMethod, paymentError, accountPin, mpesaForm, emolaForm, cardForm, lastOrder,
+      theme, searchTerm, categoryFilter, maxPriceFilter, maxPrice,
+      filteredProducts, cartCount, cartTotal, canConfirmPayment,
+      toggleTheme, openCart, closeCart, openModal, closeModal, switchAuthTab,
+      addToCart, changeQty, checkout, login, register, logout,
+      openRecovery, recoverAccount,
+      selectPayment, validatePin, confirmPayment,
+      scrollToTop
+    };
+  }
+}).mount('#app');
+</script>
+
+</body>
+</html>
